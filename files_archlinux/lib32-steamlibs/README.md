@@ -36,7 +36,7 @@ $HOME/.local/share/Steam/steamapps/common/Proton <version>/dist/lib/wine/steam.e
 lib/wine/steam.exe.so
 ```
 
-Put obtained files in the same directory along provided lib32-steamlibs `PKGBUILD` file. Build & install the package with `updpkgsums && makepkg -fi` command.
+Put obtained files in the same directory along provided `lib32-steamlibs` PKGBUILD. Build & install the package with `updpkgsums && makepkg -fi` command.
 
 ## Proton installation on Steam client
 
