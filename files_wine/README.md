@@ -25,4 +25,4 @@ On Arch Linux, you can use helper scripts such as [Fincer/dxvk-wine-autobuilder]
 
 ## LICENSE
 
-Please see license [here (ValveSoftware/Wine - Proton 4.2)](https://github.com/ValveSoftware/wine/blob/proton_4.2/LICENSE)
+Please see license information of [ValveSoftware/Wine/LICENSE](https://github.com/ValveSoftware/wine/blob/proton_4.2/LICENSE)
