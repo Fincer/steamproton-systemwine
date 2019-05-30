@@ -4,15 +4,15 @@ This folder contains necessary packages for Steam-compatible Wine/DXVK/D9VK. **N
 
 ## Contents
 
-- **[d9vk-git](d9vk-git):** D9VK build files
+- **[d9vk-git](d9vk-git):** D9VK build files. Not found in the official package repositories
 
-- **[dxvk-git](dxvk-git):** DXVK build files
+- **[dxvk-git](dxvk-git):** DXVK build files. Not found in the official package repositories
 
-- **[lib32-steamlibs](lib32-steamlibs):** Build files of proprietary Steam libraries for Wine (library files are not provided due to legal reasons)
+- **[lib32-steamlibs](lib32-steamlibs):** Build files of proprietary Steam libraries for Wine (library files are not provided due to legal reasons). Not found in the official package repositories
 
 - **[openvr-git](openvr-git):** OpenVR build files. See updated version [here](https://aur.archlinux.org/packages/openvr-git/)
 
-- **[openvr-proton](openvr-proton):** Build files of OpenVR dll libraries (library files are not provided)
+- **[openvr-proton](openvr-proton):** Build files of OpenVR dll libraries (library files are not provided). Not found in the official package repositories
 
 - **[proton-git](proton-git):** Proton build files. See updated version [here](https://aur.archlinux.org/packages/proton-git/)
 
