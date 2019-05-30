@@ -14,11 +14,15 @@ Use system-wide Wine, DXVK & D9VK for Steam Play/Proton (Windows) games, directl
 
 -----
 
+**STEAM CLIENT PREPARATION**
+
 **1)** Install Steam Client.
 
 **2)** On Steam Client, install `Proton 4.2`: `Steam Client -> LIBRARY -> Tools -> Proton 4.2 -> Install Game...`
 
 -----
+
+**SYSTEM PACKAGES**
 
 **3)** Compile & install Wine using patch files in [files_wine](files_wine). See [files_wine/README](files_wine/README.md) for additional information.
 
@@ -26,9 +30,13 @@ Use system-wide Wine, DXVK & D9VK for Steam Play/Proton (Windows) games, directl
 
 -----
 
+**PROTON CONFIGURATION**
+
 **5.A)** Apply modified [files_proton](files_proton/proton) Steam Play launch script. Put this file into `$HOME/.local/share/Steam/steamapps/common/Proton <version>/` where `<version>` is `4.2` or higher (depending on your configuration).
 
 **5.B)** Select this specific Proton version in Steam client configuration menu (`Steam Client -> Settings -> Steam Play`). _This means system-wide Wine, DXVK & D9VK are used for your Steam Play games._ **Only selected version works**
+
+-----
 
 ## Recommendations & Notes
 
