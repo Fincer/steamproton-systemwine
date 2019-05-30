@@ -1,0 +1,209 @@
+Original patch code by Valve Corporation
+
+Original commits:
+https://github.com/ValveSoftware/wine/commit/45a30e45c6ba6f0a28e2df4107d2e73203e97c64
+https://github.com/ValveSoftware/wine/commit/46759f772e5e82e1c063c93d743fafa018f406b2
+https://github.com/ValveSoftware/wine/commit/667994216734d72e2b9a4df268aae87bd8189d43
+https://github.com/ValveSoftware/wine/commit/050f036aa031322e4f32ffd9b4a90edb24b78609
+https://github.com/ValveSoftware/wine/commit/647086c049ac7e05750bf01c1cdb5a37f436a558
+https://github.com/ValveSoftware/wine/commit/6a02230c44b7a26422fdb6d4edbb8bcbc2f3d035
+
+LICENSE: See https://github.com/ValveSoftware/wine
+
+Target Wine version of this patch file:
+  Wine 4.9 (Vanilla/Non-staging)
+
+--- a/dlls/kernel32/module.c
++++ b/dlls/kernel32/module.c
+@@ -77,6 +77,32 @@ static CRITICAL_SECTION_DEBUG critsect_d
+ };
+ static CRITICAL_SECTION dlldir_section = { &critsect_debug, -1, 0, 0, 0, 0 };
+ 
++#if defined(__x86_64__)
++static const WCHAR steamclientW[] = {'s','t','e','a','m','c','l','i','e','n','t','6','4',0};
++static const WCHAR steamclient_pathW[] = {'C',':','\\','P','r','o','g','r','a','m',' ','F','i','l','e','s',' ','(','x','8','6',')','\\','S','t','e','a','m','\\','s','t','e','a','m','c','l','i','e','n','t','6','4','.','d','l','l',0};
++#else
++static const WCHAR steamclientW[] = {'s','t','e','a','m','c','l','i','e','n','t',0};
++static const WCHAR steamclient_pathW[] = {'C',':','\\','P','r','o','g','r','a','m',' ','F','i','l','e','s',' ','(','x','8','6',')','\\','S','t','e','a','m','\\','s','t','e','a','m','c','l','i','e','n','t','.','d','l','l',0};
++#endif
++static const WCHAR steamProgramPathW[] = {'C',':','\\','P','r','o','g','r','a','m',' ','F','i','l','e','s',' ','(','x','8','6',')','\\','S','t','e','a','m',0};
++static const DWORD steamProgramPathW_len = 28;
++static const WCHAR steamdllW[] = {'S','t','e','a','m','.','d','l','l',0};
++static const DWORD steamdllW_len = 9;
++static HMODULE steamclient_hmod = NULL;
++static HMODULE lsteamclient_hmod = NULL;
++
++static WCHAR *strcasestrW( const WCHAR *str, const WCHAR *sub )
++{
++    while (*str)
++    {
++        const WCHAR *p1 = str, *p2 = sub;
++        while (*p1 && *p2 && tolowerW(*p1) == tolowerW(*p2)) { p1++; p2++; }
++        if (!*p2) return (WCHAR *)str;
++        str++;
++    }
++    return NULL;
++}
++
+ /****************************************************************************
+  *              GetDllDirectoryA   (KERNEL32.@)
+  */
+@@ -445,10 +471,16 @@ BOOL WINAPI GetModuleHandleExW( DWORD fl
+     {
+         void *dummy;
+         if (!(ret = RtlPcToFileHeader( (void *)name, &dummy ))) status = STATUS_DLL_NOT_FOUND;
++        if(steamclient_hmod != NULL && ret == lsteamclient_hmod)
++            ret = steamclient_hmod;
+     }
+     else
+     {
+         UNICODE_STRING wstr;
++        if(steamclient_hmod != NULL && strcasestrW(name, steamclientW)){
++            *module = steamclient_hmod;
++            return TRUE;
++        }
+         RtlInitUnicodeString( &wstr, name );
+         status = LdrGetDllHandle( NULL, 0, &wstr, &ret );
+     }
+@@ -557,6 +589,11 @@ DWORD WINAPI GetModuleFileNameW( HMODULE
+     NTSTATUS nts;
+     WIN16_SUBSYSTEM_TIB *win16_tib;
+ 
++    if(steamclient_hmod != NULL && hModule == steamclient_hmod){
++        memcpy(lpFileName, steamclient_pathW, sizeof(steamclient_pathW));
++        return sizeof(steamclient_pathW)/sizeof(WCHAR);
++    }
++
+     if (!hModule && ((win16_tib = NtCurrentTeb()->Tib.SubSystemTib)) && win16_tib->exe_name)
+     {
+         len = min(size, win16_tib->exe_name->Length / sizeof(WCHAR));
+@@ -600,11 +637,15 @@ static const WCHAR *get_dll_system_path(
+     if (!cached_path)
+     {
+         WCHAR *p, *path;
+-        int len = 1;
++        int len = 2;
+ 
++        len += steamProgramPathW_len;
+         len += 2 * GetSystemDirectoryW( NULL, 0 );
+         len += GetWindowsDirectoryW( NULL, 0 );
+         p = path = HeapAlloc( GetProcessHeap(), 0, len * sizeof(WCHAR) );
++        strcpyW(p, steamProgramPathW);
++        p += steamProgramPathW_len;
++        *p++ = ';';
+         GetSystemDirectoryW( p, path + len - p);
+         p += strlenW(p);
+         /* if system directory ends in "32" add 16-bit version too */
+@@ -933,6 +974,7 @@ static HMODULE load_library( const UNICO
+     NTSTATUS nts;
+     HMODULE hModule;
+     WCHAR *load_path;
++    const WCHAR *p;
+     const DWORD load_library_search_flags = (LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR |
+                                              LOAD_LIBRARY_SEARCH_APPLICATION_DIR |
+                                              LOAD_LIBRARY_SEARCH_USER_DIRS |
+@@ -946,6 +988,36 @@ static HMODULE load_library( const UNICO
+     if( flags & unsupported_flags)
+         FIXME("unsupported flag(s) used (flags: 0x%08x)\n", flags);
+ 
++    if((p = strcasestrW(libname->Buffer, steamclientW)) &&
++            (p == libname->Buffer ||
++             *(p - 1) != 'l')){
++
++        if(!lsteamclient_hmod)
++            lsteamclient_hmod = LoadLibraryA("lsteamclient.dll");
++
++        if(!steamclient_hmod){
++            HANDLE f = CreateFileW(steamclient_pathW,
++                    GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
++                    NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
++            if(f != INVALID_HANDLE_VALUE){
++                DWORD sz, readed;
++
++                sz = GetFileSize(f, NULL);
++
++                steamclient_hmod = HeapAlloc(GetProcessHeap(), 0, sz);
++                ReadFile(f, steamclient_hmod, sz, &readed, NULL);
++
++                CloseHandle(f);
++            }else{
++                /* this will fail DRM checks, but otherwise should work */
++                ERR("somehow failed to load steamclient\n");
++                steamclient_hmod = lsteamclient_hmod;
++            }
++        }
++
++        return steamclient_hmod;
++    }
++
+     if (flags & load_library_search_flags)
+         load_path = get_dll_load_path_search_flags( libname->Buffer, flags );
+     else
+@@ -1101,6 +1173,9 @@ BOOL WINAPI DECLSPEC_HOTPATCH FreeLibrar
+         return FALSE;
+     }
+ 
++    if(steamclient_hmod != NULL && hLibModule == steamclient_hmod)
++        return TRUE;
++
+     if ((ULONG_PTR)hLibModule & 3) /* this is a datafile module */
+     {
+         void *ptr = (void *)((ULONG_PTR)hLibModule & ~3);
+@@ -1155,6 +1230,9 @@ FARPROC get_proc_address( HMODULE hModul
+ 
+     if (!hModule) hModule = NtCurrentTeb()->Peb->ImageBaseAddress;
+ 
++    if(steamclient_hmod != NULL && hModule == steamclient_hmod)
++        hModule = lsteamclient_hmod;
++
+     if ((ULONG_PTR)function >> 16)
+     {
+         ANSI_STRING     str;
+
+--- a/dlls/kernel32/process.c
++++ b/dlls/kernel32/process.c
+@@ -3384,6 +3384,22 @@ HANDLE WINAPI OpenProcess( DWORD access,
+     OBJECT_ATTRIBUTES   attr;
+     CLIENT_ID           cid;
+ 
++    if(id == 0xfffe)
++        /* STEAMOS HACK:
++         * On Windows, the Steam client puts its process ID into the registry
++         * at:
++         *
++         *   [HKCU\Software\Valve\Steam\ActiveProcess]
++         *   PID=dword:00000008
++         *
++         * Games get that pid from the registry and then query it with
++         * OpenProcess to ensure Steam is running. Since we aren't running the
++         * Windows Steam in Wine, instead we hack this magic number into the
++         * registry and then substitute the game's process itself in its place
++         * so it can query a valid process.
++         */
++        id = GetCurrentProcessId();
++
+     cid.UniqueProcess = ULongToHandle(id);
+     cid.UniqueThread = 0; /* FIXME ? */
+
+--- a/loader/wine.inf.in
++++ b/loader/wine.inf.in
+@@ -178,6 +181,7 @@
+ CurrentVersionNT="Software\Microsoft\Windows NT\CurrentVersion"
+ FontSubStr="Software\Microsoft\Windows NT\CurrentVersion\FontSubstitutes"
+ Control="System\CurrentControlSet\Control"
++FontsNT="Software\Microsoft\Windows NT\CurrentVersion\Fonts"
+ 
+ [Classes]
+ HKCR,.chm,,2,"chm.file"
+@@ -610,6 +614,11 @@
+ HKLM,%FontSubStr%,"Times New Roman Greek,161",,"Times New Roman,161"
+ HKLM,%FontSubStr%,"Times New Roman TUR,162",,"Times New Roman,162"
+ HKLM,System\CurrentControlSet\Hardware Profiles\Current\Software\Fonts,"LogPixels",0x10003,0x00000060
++HKLM,%FontsNT%,"Arial (TrueType)",,"arial.ttf"
++HKLM,%FontsNT%,"Arial Bold (TrueType)",,"arialbd.ttf"
++HKLM,%FontsNT%,"Times New Roman (TrueType)",,"times.ttf"
++HKLM,%FontsNT%,"Courier New (TrueType)",,"cour.ttf"
++HKCU,Software\Wine\Fonts\Replacements,"Palatino Linotype",,"Times New Roman"
+ 
+ [MCI]
+ HKLM,%Mci32Str%,"AVIVideo",,"mciavi32.dll"

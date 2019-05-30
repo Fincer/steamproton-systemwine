@@ -1,0 +1,22 @@
+# Maintainer: Pekka Helenius <fincer89 [at] hotmail [dot] com>
+
+pkgname=lib32-steamlibs
+pkgver=4.2
+pkgrel=1
+pkgdesc='Proprietary Valve Steam client libraries for Wine (Proton)'
+arch=('x86_64')
+url='https://steampowered.com/'
+license=('custom')
+depends=('wine' 'steam')
+source=(
+ 'libsteam_api.so'
+ 'steam.exe.so'
+)
+md5sums=('2b8113a13ad8409c916492b8b7cb061c'
+         '7c269269b9e3de1f780d7be81f910ba7')
+
+package() {
+  mkdir -p "${pkgdir}/usr/lib32/wine"
+  install -Dm 644 -t "$pkgdir/usr/lib32/" libsteam_api.so
+  install -Dm 755 -t "$pkgdir/usr/lib32/wine/" steam.exe.so
+}

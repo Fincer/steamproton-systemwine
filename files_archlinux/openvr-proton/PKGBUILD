@@ -1,0 +1,40 @@
+# Maintainer: Pekka Helenius <fincer89 [at] hotmail [dot] com>
+
+pkgname=openvr-proton
+pkgver=4.2
+pkgrel=1
+pkgdesc='DLL libraries for Valve Steam Proton & OpenVR platforms'
+arch=('x86_64')
+url='https://steampowered.com/'
+license=('custom')
+depends=('wine' 'steam' 'openvr-git' 'dxvk-git')
+source=(
+  "32_vrclient.dll"::"file:///${startdir}/lib32/vrclient.dll"
+  "32_openvr_api_dxvk.dll"::"file:///${startdir}/lib32/openvr_api_dxvk.dll"
+  "64_vrclient_x64.dll"::"file:///${startdir}/lib64/vrclient_x64.dll"
+  "64_openvr_api_dxvk.dll"::"file:///${startdir}/lib64/openvr_api_dxvk.dll"
+)
+md5sums=('8c15e73e9963e600845c27f840380e92'
+         '14b755f2c6a58873a5f0410a2d8396c0'
+         '0b2025db24e3570d2a2732b035bb499a'
+         '8df23226245195205047694fc6aec654')
+
+package() {
+  mkdir -p "${pkgdir}"/usr/{lib{32,64}/wine/fakedlls,/share/dxvk/x{32,64}}
+
+  cd "${srcdir}"
+  for dll in ./*.dll; do
+    for i in 32 64; do
+      dll_newname=$(echo $(basename "${dll}" | sed "s/^${i}\_//"))
+      if [[ $(echo $(basename "${dll}")) =~ ^${i} ]]; then
+        if [[ $(echo $(basename "${dll}")) =~ dxvk ]]; then
+          install -Dm644 "${dll}" "${pkgdir}/usr/share/dxvk/x${i}/${dll_newname}"
+        else
+          install -Dm644 "${dll}" "${pkgdir}/usr/lib${i}/wine/fakedlls/${dll_newname}"
+        fi
+      fi
+    done
+  done
+
+}
+

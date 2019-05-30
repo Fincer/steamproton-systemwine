@@ -1,0 +1,87 @@
+# Maintainer: Pekka Helenius (~Fincer) <fincer89 at hotmail dot com>
+# Contributor: Adrià Cereto i Massagué <ssorgatem at gmail.com>
+
+pkgname=dxvk-git
+_pkgname=dxvk
+pkgver=1.2.1.4
+pkgrel=1
+pkgdesc="A Vulkan-based compatibility layer for Direct3D 10/11 which allows running 3D applications on Linux using Wine."
+url="https://github.com/doitsujin/dxvk"
+license=('custom:zlib/libpng')
+
+arch=('x86_64')
+conflicts=(
+  'dxvk-bin'
+  'dxvk-winelib-git'
+  'dxvk-legacy-git'
+  'dxvk-mingw-git'
+)
+depends=('wine' 'vulkan-icd-loader' 'lib32-vulkan-icd-loader')
+makedepends=(
+  'ninja'
+  'meson>=0.43'
+  'glslang'
+  'mingw-w64-gcc'
+  'git'
+  'wine'
+)
+provides=('dxvk')
+options=(!strip !buildflags staticlibs)
+source=(${pkgname}::"git+https://github.com/doitsujin/dxvk.git")
+sha256sums=('SKIP'
+            'SKIP')
+
+##############################
+
+p=0
+for patch in $(find . -mindepth 1 -maxdepth 1 -regex ".*\.\(patch\|diff\)$"); do
+  patches[$p]="$(basename ${patch})"
+  let p++
+done
+unset p
+source+=(${source[@]} ${patches[@]})
+    
+# Reset git tree and apply custom patches
+prepare() {
+
+  cd "${srcdir}/${pkgname}"
+
+  # Apply patches, if present
+  if [[ $(ls "${srcdir}"/*.{patch,diff} 2>/dev/null | wc -w) -ne 0 ]]; then
+
+  # Apply all custom patches
+  msg2 "Applying custom patches..."
+
+    for i in "${srcdir}"/*.{patch,diff}; do 
+      if [[ -f ${i} ]]; then
+        patch -Np1 < ${i}
+      fi
+    done
+
+  fi
+
+}
+
+##############################
+
+# Retrieve DXVK version tag
+pkgver() {
+  cd "${pkgname}"
+  printf '%s' $(git describe --long --always | sed 's/\-[a-z].*//; s/\-/\./; s/[a-z]//g')
+}
+
+# Launch DXVK build script
+build() {
+  "${srcdir}/${pkgname}"/package-release.sh ${pkgver} "${srcdir}"/build --no-package
+}
+
+# Bundle the compiled files
+package() {
+  mkdir -p "${pkgdir}"/usr/{bin,share/dxvk}
+  cp -r "${srcdir}"/build/${_pkgname}-${pkgver}/* "${pkgdir}/usr/share/dxvk/"
+
+  echo -e "#!/bin/sh\n/usr/share/dxvk/setup_dxvk.sh" \
+  > "${pkgdir}/usr/bin/setup_dxvk"
+
+  chmod +x "${pkgdir}/usr/bin/setup_dxvk"
+}
