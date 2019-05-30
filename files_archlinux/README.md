@@ -16,6 +16,6 @@ This folder contains necessary packages for Steam-compatible Wine/DXVK/D9VK. **N
 
 - **[proton-git](proton-git):** Proton build files. See updated version [here](https://aur.archlinux.org/packages/proton-git/)
 
-- **[steam](steam):** Steam client build files. See updated version [here](https://www.archlinux.org/packages/multilib/x86_64/steam/)
+- **[steam](steam):** Steam client build files & modified `PKGBUILD` with added packages in `depends` array. See updated version number [here](https://www.archlinux.org/packages/multilib/x86_64/steam/).
 
 Some subdirectories include `README.md` file for additional instructions/information.
