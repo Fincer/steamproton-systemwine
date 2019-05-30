@@ -1,3 +1,13 @@
+Original patch code by Valve Corporation
+
+Original commits:
+https://github.com/ValveSoftware/wine/commit/62c9478e4768e94e841da2ef75eb778ed346e3ab
+
+LICENSE: See https://github.com/ValveSoftware/wine
+
+Target Wine version of this patch file:
+  Wine 4.9 (Staging)
+
 --- a/dlls/kernel32/heap.c
 +++ b/dlls/kernel32/heap.c
 @@ -75,6 +75,7 @@ WINE_DECLARE_DEBUG_CHANNEL(globalmem);

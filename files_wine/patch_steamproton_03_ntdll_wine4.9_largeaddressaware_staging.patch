@@ -6,7 +6,7 @@ https://github.com/ValveSoftware/wine/commit/62c9478e4768e94e841da2ef75eb778ed34
 LICENSE: See https://github.com/ValveSoftware/wine
 
 Target Wine version of this patch file:
-  Wine 4.9 (Vanilla/Non-staging)
+  Wine 4.9 (Staging)
 
 --- a/dlls/ntdll/virtual.c
 +++ b/dlls/ntdll/virtual.c
