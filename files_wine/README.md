@@ -2,7 +2,7 @@
 
 The included patch files hook necessary Steam libraries into Wine process, allowing Steam games to detect Steam client presence. Without these patches, it is impossible/difficult to run Steam client with system Wine.
 
-Original patch code by Valve Corporation. Respective source code links are provided in headers of the provided patch files.
+Some patch code is developed by Valve Corporation. Respective source code links are provided in headers of these patch files.
 
 Patch name syntax:
 
